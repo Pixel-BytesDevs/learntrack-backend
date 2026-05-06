@@ -1,1 +1,49 @@
+# === Environment & Secrets ===
 .env
+*.env
+*.pem
+*.key
+credentials.json
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+*.swp
+
+# === Java / Maven ===
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.war
+*.ear
+*.class
+.mtj.tmp/
+*.log
+
+# === Python (Flask/FastAPI) ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === IDEs (IntelliJ, VS Code) ===
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# === Docker & Local Logs ===
+.docker/
+logs/
+*.log
+mysql_data/
+postgres_data/
+neo4j_data/
