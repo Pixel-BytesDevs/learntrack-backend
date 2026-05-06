@@ -34,7 +34,7 @@ public class BeansConfig {
         cors.addAllowedHeader("*");
         cors.addAllowedMethod("*");
         cors.setAllowCredentials(true);
-        cors.addAllowedOrigin("http://localhost:4200");
+        cors.addAllowedOrigin("http://18.118.137.168/");
         source.registerCorsConfiguration("/**", cors);
         return source;
     }
@@ -46,7 +46,7 @@ public class BeansConfig {
                 .clientId(googleClientId)
                 .clientSecret(googleClientSecret)
                 .userNameAttributeName("email") // ✅ aquí
-                .redirectUri("http://localhost:9003/login/oauth2/code/google")
+                .redirectUri("http://3.145.22.173:9003/login/oauth2/code/google")
                 .build();
         return new InMemoryClientRegistrationRepository(google);
     }

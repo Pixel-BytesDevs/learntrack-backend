@@ -68,7 +68,7 @@ public class AppUserService {
         Instant now = Instant.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("http://localhost:9003")
+                .issuer("http://3.145.22.173:9003")
                 .issuedAt(now)
                 .expiresAt(now.plus(15, ChronoUnit.MINUTES)) // 🔥 AJUSTA AQUÍ
                 .subject(user.getUsername())

@@ -221,7 +221,7 @@ public class AuthorizationSecurityConfig {
     }
     @Bean
     public AuthorizationServerSettings authorizationServerSettings(){
-        return AuthorizationServerSettings.builder().issuer("http://localhost:9003").build();
+        return AuthorizationServerSettings.builder().issuer("http://3.145.22.173:9003").build();
     }
 
 

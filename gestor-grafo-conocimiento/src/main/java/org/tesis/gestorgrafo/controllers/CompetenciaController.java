@@ -15,7 +15,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://18.118.137.168/")
 public class CompetenciaController {
 
     private final IGeminiService service;
