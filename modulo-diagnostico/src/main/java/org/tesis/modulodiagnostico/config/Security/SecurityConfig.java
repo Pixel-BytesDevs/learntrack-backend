@@ -39,7 +39,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cors = new CorsConfiguration();
 
-        cors.addAllowedOrigin("http://18.118.137.168/"); // Angular
+        cors.addAllowedOrigin("http://18.118.137.168"); // Angular
         cors.addAllowedHeader("*");
         cors.addAllowedMethod("*");
         cors.setAllowCredentials(true);
