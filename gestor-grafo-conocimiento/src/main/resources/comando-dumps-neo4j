@@ -1,0 +1,2 @@
+neo4j-admin database dump neo4j --to-path=C:/neo4j-backups
+neo4j-admin database load neo4j --from-path=C:/neo4j-backups/neo4j.dump --overwrite-destination=true

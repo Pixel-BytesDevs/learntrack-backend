@@ -1,0 +1,6 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-produccion.com:8761/eureka/
+  instance:
+    ip-address: ${SERVER_PUBLIC_IP} # IP real del servidor en la nube
