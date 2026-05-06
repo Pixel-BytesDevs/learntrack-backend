@@ -1,13 +1,29 @@
-# Usamos Java 21
-FROM eclipse-temurin:21-jre-alpine
-
+# --- ETAPA 1: Compilación ---
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Reemplaza con el nombre exacto de tu .jar
-COPY target/modulo-diagnostico-0.0.1-SNAPSHOT.jar app.jar
+# Copiamos archivos de Maven Wrapper
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
 
-# Exponemos el puerto de este módulo
+# Limpieza de finales de línea y permisos (Vital para EC2)
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+
+# Descarga de dependencias
+RUN ./mvnw dependency:go-offline
+
+# Compilación del proyecto
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# --- ETAPA 2: Ejecución ---
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Copiamos el jar generado
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8092
 
-# Este módulo parece hacer varias peticiones HTTP externas, le damos 512MB
+# Mantenemos tus límites de 512MB
 ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]

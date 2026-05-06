@@ -1,14 +1,26 @@
-# Usamos Java 17 (Cámbialo a 21 si tu proyecto usa Java 21)
-FROM eclipse-temurin:21-jre-alpine
-
-# Creamos la carpeta de trabajo
+# --- ETAPA 1: Compilación ---
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Copiamos el .jar desde la carpeta target (REEMPLAZA EL NOMBRE AQUÍ)
-COPY target/config-server-0.0.1-SNAPSHOT.jar app.jar
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
 
-# Exponemos el puerto 8888 que usa tu Config Server
+# Limpieza y permisos
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+
+RUN ./mvnw dependency:go-offline
+
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# --- ETAPA 2: Ejecución ---
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Copiamos el jar generado
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8888
 
-# Comando para arrancar, limitando la memoria RAM a 256MB para proteger tu EC2
+# Mantenemos el límite estricto de 256MB para el Config Server
 ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-jar", "app.jar"]

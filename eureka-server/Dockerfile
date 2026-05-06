@@ -1,14 +1,29 @@
-# Usamos Java 17 (Cámbialo a 21 si tu proyecto lo requiere)
-FROM eclipse-temurin:21-jre-alpine
-
-# Carpeta de trabajo
+# --- ETAPA 1: Compilación ---
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Copiamos el .jar generado (REEMPLAZA EL NOMBRE POR EL TUYO)
-COPY target/eureka-server-0.0.1-SNAPSHOT.jar app.jar
+# Copiamos archivos de Maven Wrapper
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
 
-# Exponemos el puerto de Eureka
+# Limpieza de finales de línea (por si vienes de Windows) y permisos
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+
+# Descargamos dependencias
+RUN ./mvnw dependency:go-offline
+
+# Compilamos
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# --- ETAPA 2: Ejecución ---
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Copiamos el jar generado en la etapa anterior
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8761
 
-# Arrancamos limitando la memoria a 256MB
+# Mantenemos tus límites de 256MB para Eureka
 ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-jar", "app.jar"]
