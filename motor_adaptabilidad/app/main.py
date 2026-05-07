@@ -52,6 +52,14 @@ def get_state(name):
     return state
 
 
+def map_domain_level_to_difficulty(domain_level: float) -> str:
+    if domain_level <= 30:
+        return "básico"
+    if domain_level <= 60:
+        return "intermedio"
+    return "avanzado"
+
+
 # =========================
 # ADAPTABILITY (GENERAR)
 # =========================
@@ -95,12 +103,15 @@ def adaptability_endpoint():
         if not tema:
             return jsonify({"success": False, "message": "No hay tema"}), 400
 
+        difficulty = map_domain_level_to_difficulty(tema.domain_level)
+
         # Llamar microservicio OA
         oa_response = requests.post(
             f"{OA_MANAGER_URL}/learning-objects/by-topic-and-styles",
             json={
                 "topicId": tema.topic_id,
                 "topicName": tema.topic_name,
+                "difficulty": difficulty,
                 "learningStyles": [
                     {"styleName": s.style_name, "porcentaje": s.porcentaje}
                     for s in learning_style_responses

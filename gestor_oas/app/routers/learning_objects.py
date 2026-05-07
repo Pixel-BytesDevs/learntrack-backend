@@ -51,6 +51,7 @@ class LearningStyleRequest(BaseModel):
 class TopicStyleRequest(BaseModel):
     topicId: str
     topicName: str
+    difficulty: Optional[str] = None
     learningStyles: List[LearningStyleRequest]
 
 
@@ -72,6 +73,7 @@ class LearningObjectItem(BaseModel):
     geObjective: Optional[str] = None
     objectives: Optional[list] = None
     approach: Optional[str] = None
+    levelName: Optional[str] = None
 
 
 class TopicStyleGroupResponse(BaseModel):
@@ -118,6 +120,12 @@ async def get_learning_objects_by_topic_and_styles(
 
         results = []
 
+        level = None
+        if request.difficulty:
+            level = db.query(models.Level).filter(
+                models.Level.level == request.difficulty
+            ).first()
+
         for style_request in request.learningStyles:
             style = db.query(models.LearningStyle).filter(
                 models.LearningStyle.stype == style_request.styleName
@@ -130,10 +138,19 @@ async def get_learning_objects_by_topic_and_styles(
                 })
                 continue
 
-            lo = db.query(models.LearningObject).filter(
+            lo_query = db.query(models.LearningObject).filter(
                 models.LearningObject.idTopic == topic.id,
                 models.LearningObject.idStyle == style.id
-            ).first()
+            )
+            if level:
+                lo_query = lo_query.filter(models.LearningObject.idLevel == level.id)
+
+            lo = lo_query.first()
+            if not lo and level:
+                lo = db.query(models.LearningObject).filter(
+                    models.LearningObject.idTopic == topic.id,
+                    models.LearningObject.idStyle == style.id
+                ).first()
 
             if not lo:
                 results.append({
@@ -142,7 +159,6 @@ async def get_learning_objects_by_topic_and_styles(
                 })
                 continue
 
-            # 🔥 AQUÍ ESTÁ EL CAMBIO CLAVE
             file_url = resolve_file_url(lo.s3_key, s3_service)
 
             results.append({
@@ -158,10 +174,11 @@ async def get_learning_objects_by_topic_and_styles(
                     "fileName": lo.file_name,
                     "fileExtension": lo.file_extension,
                     "estimatedDuration": lo.estimated_duration,
-                    "url": file_url,  # 🔥 YA NO USA s3_url
+                    "url": file_url,
                     "geObjective": lo.ge_objective,
                     "objectives": lo.objectives,
-                    "approach": lo.approach
+                    "approach": lo.approach,
+                    "levelName": lo.level.level if lo.level else None
                 }
             })
 
