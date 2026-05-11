@@ -11,6 +11,7 @@ from app.schemas.learning_objects import (
 from app.services.file_service import S3Service
 from app.config import settings
 import logging
+from sqlalchemy.sql import func
 
 logger = logging.getLogger(__name__)
 
@@ -145,12 +146,13 @@ async def get_learning_objects_by_topic_and_styles(
             if level:
                 lo_query = lo_query.filter(models.LearningObject.idLevel == level.id)
 
-            lo = lo_query.first()
+            # Hay múltiples OAs por (tema, estilo, nivel). Elegimos uno al azar para no repetir siempre el mismo.
+            lo = lo_query.order_by(func.random()).first()
             if not lo and level:
                 lo = db.query(models.LearningObject).filter(
                     models.LearningObject.idTopic == topic.id,
                     models.LearningObject.idStyle == style.id
-                ).first()
+                ).order_by(func.random()).first()
 
             if not lo:
                 results.append({
