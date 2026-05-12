@@ -70,7 +70,7 @@ public class AppUserService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("http://3.145.22.173:9003")
                 .issuedAt(now)
-                .expiresAt(now.plus(15, ChronoUnit.MINUTES)) // 🔥 AJUSTA AQUÍ
+                .expiresAt(now.plus(8, ChronoUnit.HOURS)) // 🔥 AJUSTA AQUÍ
                 .subject(user.getUsername())
                 .claim("id",user.getId())
                 .claim("roles", roles)
