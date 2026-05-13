@@ -122,6 +122,10 @@ public class TopicUserService {
 
         boolean useBasic = avg.compareTo(BigDecimal.valueOf(8)) <= 0;
         BigDecimal initialDomain;
+        // Si el usuario obtuvo nota "alta" (avg >= 12), se asigna principal ~65.
+        // Para evitar que los nodos principal queden bloqueados luego por prerequisitos,
+        // inicializamos también los nodos basic en 90.
+        boolean principalStrong = !useBasic && avg.compareTo(BigDecimal.valueOf(12)) >= 0;
 
         // Reglas:
         // 0 -> basic @0
@@ -154,15 +158,41 @@ public class TopicUserService {
             useBasic = false; // principal
         }
 
+        BigDecimal initialDomainScaled = initialDomain.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal zeroScaled = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal ninetyScaled = BigDecimal.valueOf(90).setScale(2, RoundingMode.HALF_UP);
+
         for (TopicUser tu : topicUsers) {
             Topic topic = tu.getTopic();
-            boolean target = useBasic
-                    ? Boolean.TRUE.equals(topic.getIsBasic())
-                    : Boolean.TRUE.equals(topic.getIsPrincipal());
 
-            tu.setActive(target);
+            boolean isBasic = Boolean.TRUE.equals(topic.getIsBasic());
+            boolean isPrincipal = Boolean.TRUE.equals(topic.getIsPrincipal());
+
+            boolean targetActive;
+            BigDecimal targetDomain;
+
+            if (useBasic) {
+                // Rama basic: activamos básicos y dejamos los principales en 0.
+                targetActive = isBasic;
+                targetDomain = isBasic ? initialDomainScaled : zeroScaled;
+            } else {
+                // Rama principal: activamos principales con el dominio calculado.
+                // Si el principal es fuerte (≈65), también activamos básicos en 90.
+                if (isPrincipal) {
+                    targetActive = true;
+                    targetDomain = initialDomainScaled;
+                } else if (isBasic) {
+                    targetActive = principalStrong;
+                    targetDomain = principalStrong ? ninetyScaled : zeroScaled;
+                } else {
+                    targetActive = false;
+                    targetDomain = zeroScaled;
+                }
+            }
+
+            tu.setActive(targetActive);
             tu.setUpdatedAt(LocalDateTime.now());
-            tu.setDomainLevel(target ? initialDomain.setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+            tu.setDomainLevel(targetDomain);
             topicUserRepository.save(tu);
         }
     }
