@@ -26,11 +26,9 @@ public class TopicUserService {
     private static final Logger log = LoggerFactory.getLogger(TopicUserService.class);
     private final TopicUserRepository topicUserRepository;
     private final TopicServiceImpl topicService;
-    private final UserServiceImpl userService;
     private final GraphClient graphClient;
 
     public TopicUserService(TopicUserRepository topicUserRepository, TopicServiceImpl topicService, UserServiceImpl userService, GraphClient graphClient) {
-        this.userService = userService;
         this.topicUserRepository = topicUserRepository;
         this.topicService = topicService;
         this.graphClient = graphClient;
@@ -85,19 +83,32 @@ public class TopicUserService {
     // Para un nodo nuevo
     @Transactional
     public TopicUser setInitialDomainInANodeByUser(String topicId, Long userId, BigDecimal domain) {
-        if (!allRequiredTopicsAreActiveAndHighDomainLevel(topicId, userId)) {
-            return null;
-        }
+        boolean prereqsOk = allRequiredTopicsAreActiveAndHighDomainLevel(topicId, userId);
         BigDecimal normalizedDomain = normalizeDomainScale(domain);
         TopicUser topicUser = topicUserRepository.findByTopicIdAndUserId(topicId, userId);
-        topicUser.setTopic(topicService.getById(topicId));
-        topicUser.setCreatedAt(LocalDateTime.now()); // -> Fecha de creación actual, agregar condicional cuando no tiene valor ya que indica que es la primera vez que se asigna un nivel de dominio
-        topicUser.setActive(true);
-        //topicUser.setUsuario(userService.findById(userId));
-        topicUser.setIdUsuario(userId);
+        if (topicUser == null) {
+            topicUser = new TopicUser();
+            topicUser.setTopic(topicService.getById(topicId));
+            topicUser.setIdUsuario(userId);
+            topicUser.setDomainLevel(BigDecimal.ZERO);
+            topicUser.setActive(false);
+        } else {
+            topicUser.setTopic(topicService.getById(topicId));
+            topicUser.setIdUsuario(userId);
+        }
+
+        if (topicUser.getCreatedAt() == null) {
+            topicUser.setCreatedAt(LocalDateTime.now());
+        }
+        topicUser.setUpdatedAt(LocalDateTime.now());
+
+        // Dominio SIEMPRE se persiste (suba o baje). Los prerequisitos solo controlan activación/desbloqueo.
         topicUser.setDomainLevel(normalizedDomain);
+        if (prereqsOk) {
+            topicUser.setActive(true);
+        }
         TopicUser saved = topicUserRepository.save(topicUser);
-        if (normalizedDomain.compareTo(new BigDecimal("80.00")) >= 0) {
+        if (prereqsOk && normalizedDomain.compareTo(new BigDecimal("80.00")) >= 0) {
             openNewNodesForUser(topicId, userId);
         }
         return saved;
